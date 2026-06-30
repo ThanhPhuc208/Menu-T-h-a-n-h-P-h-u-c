@@ -1,5 +1,5 @@
 -- (Creator = Thanh Phuc)
--- 💟 Thanh Phuc - Chroma Boombox Cầu Vồng Đeo Chéo + Nháy Theo Nhạc (Visualizer Mi 10S) 💟
+-- 💟 Thanh Phuc - Chroma Boombox Cầu Vồng Đeo Chéo + Nháy Theo Nhạc (Visualizer Mi 10S 6 Thanh Cực Căng) 💟
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -48,7 +48,7 @@ local function CreateFakeBoombox()
     part.Parent = character
     FakeBoombox = part
     
-    -- Kích thước gốc chuẩn (gọn gàng như trong ảnh 1000056621.jpg)
+    -- Kích thước gốc chuẩn gọn gàng
     local baseSize = Vector3.new(1.8, 1.2, 0.4)
     part.Size = baseSize
     
@@ -59,8 +59,8 @@ local function CreateFakeBoombox()
     weld.C0 = CFrame.new(0, -0.2, 0.65) * CFrame.Angles(0, math.rad(180), math.rad(25))
     weld.Parent = part
     
-    -- TẠO CÁC THANH SÓNG NHẠC ĐỐI XỨNG KÉP (MÔ PHỎNG LOA MI 10S)
-    local barCount = 6 -- Tăng lên 6 thanh để chia đôi đối xứng hoàn hảo 3-3
+    -- TẠO CÁC THANH SÓNG NHẠC ĐỐI XỨNG KÉP (CHUẨN 6 THANH/6 NHỊP)
+    local barCount = 6 -- Trả về đúng 6 thanh chia đều đối xứng 3-3 từ giữa ra 2 bên
     local barWidth = baseSize.X / barCount 
     
     for i = 1, barCount do
@@ -85,7 +85,7 @@ local function CreateFakeBoombox()
         table.insert(VisualizerBars, {Part = bar, Weld = barWeld, Index = i})
     end
     
-    -- Hiệu ứng chạy màu cầu vồng + BASS ĐẬP MẠNH CHUẨN MI 10S
+    -- Hiệu ứng chạy màu cầu vồng + SIÊU BASS ĐẬP MẠNH MẼ
     local hue = 0
     loopConnection = RunService.RenderStepped:Connect(function()
         if not part or not part.Parent or not part:IsDescendantOf(workspace) then
@@ -95,40 +95,40 @@ local function CreateFakeBoombox()
         
         -- Lấy độ lớn âm thanh hiện tại
         local loudness = LocalSound.PlaybackLoudness
-        local normLoudness = math.clamp(loudness / 290, 0, 1) -- Thu nhỏ mẫu số để kích Bass nhạy hơn
+        local normLoudness = math.clamp(loudness / 260, 0, 1) -- Đẩy độ nhạy Bass lên tối đa
         
-        -- Tốc độ chuyển màu Cầu vồng chạy theo nhịp Bass dồn dập
-        local speedMultiplier = 1 + (normLoudness * 4)
-        hue = (hue + (0.7 * speedMultiplier)) % 360 
+        -- Tốc độ chuyển màu Cầu vồng chạy nhanh theo nhịp Bass dồn dập
+        local speedMultiplier = 1 + (normLoudness * 4.5)
+        hue = (hue + (0.75 * speedMultiplier)) % 360 
         local mainColor = Color3.fromHSV(hue / 360, 1, 1)
         
         -- Áp màu cầu vồng lên khối chính
         part.Color = mainColor
         
-        -- ĐẬP BASS MI 10S: Biên độ giật nảy căng hơn, uy lực và đàn hồi cao
-        local scaleFactor = 1 + (normLoudness * 0.38) 
-        part.Size = Vector3.new(baseSize.X * scaleFactor, baseSize.Y * (1 + normLoudness * 0.15), baseSize.Z * scaleFactor)
+        -- SIÊU BASS MI 10S: Giật nảy thùng loa căng đét, phồng to nhỏ cực bốc
+        local scaleFactor = 1 + (normLoudness * 0.45) 
+        part.Size = Vector3.new(baseSize.X * scaleFactor, baseSize.Y * (1 + normLoudness * 0.2), baseSize.Z * scaleFactor)
         
-        -- Cập nhật các thanh sóng nhạc nhấp nhô ĐỐI XỨNG KÉP
+        -- Cập nhật 6 thanh sóng nhạc nhấp nhô ĐỐI XỨNG ĐỀU (Sửa lỗi lệch nhịp ở giữa)
         for _, item in pairs(VisualizerBars) do
             if item.Part and item.Part.Parent then
-                -- Tính toán vị trí đối xứng từ tâm loa ra 2 rìa
-                local centerOffset = math.abs(item.Index - (barCount + 1) / 2)
-                local waveFactor = math.sin(tick() * 18 + centerOffset * 2) * 0.15
+                -- Tính toán khoảng cách từ vị trí thanh đến tâm đối xứng chính xác giữa thanh 3 và thanh 4
+                local centerOffset = math.abs(item.Index - 3.5) -- Cặp (3,4) = 0.5, Cặp (2,5) = 1.5, Cặp (1,6) = 2.5
+                local waveFactor = math.sin(tick() * 22 + centerOffset * 2.2) * 0.15
                 
-                -- Độ cao nhảy cực đại dựa theo nhịp Bass mạnh
-                local targetHeight = math.clamp((normLoudness * 0.85) + waveFactor, 0.05, 0.9)
+                -- Độ cao nhảy giật nảy căng theo tiếng Bass
+                local targetHeight = math.clamp((normLoudness * 1.1) - (centerOffset * 0.08) + waveFactor, 0.05, 1.2)
                 
-                -- Cập nhật kích thước thanh theo tỷ lệ scale của thùng loa
+                -- Cập nhật kích thước thanh theo tỷ lệ scale của thùng loa chính
                 item.Part.Size = Vector3.new(barWidth * scaleFactor, targetHeight, item.Part.Size.Z)
                 
-                -- Định vị chân dải LED bám sát mặt loa
+                -- Định vị chân dải LED bám khít sát mặt loa trên khi giật to nhỏ
                 local currentTop = (part.Size.Y) / 2
                 local currentXOffset = (-(baseSize.X / 2) + (item.Index - 0.5) * barWidth) * scaleFactor
                 item.Weld.C0 = CFrame.new(currentXOffset, currentTop + (targetHeight / 2), 0)
                 
-                -- Đổi màu dải cầu vồng đối xứng nhịp nhàng
-                local barHue = (hue + (centerOffset * 25)) % 360
+                -- Đổi màu dải cầu vồng đối xứng cặp hoàn hảo từ giữa ra rìa loa
+                local barHue = (hue + (centerOffset * 35)) % 360
                 item.Part.Color = Color3.fromHSV(barHue / 360, 1, 1)
             end
         end
@@ -216,7 +216,7 @@ PlayBtn.MouseButton1Click:Connect(function()
         
         -- Thực hiện tạo mới / cập nhật lại loa ngay lập tức
         CreateFakeBoombox()
-        print("Thanh Phuc đã cập nhật bài hát mới thành công, Boombox giật Bass cực căng!")
+        print("Thanh Phuc đã cập nhật bài hát mới, hệ thống 6 nhịp đối xứng Mi 10S hoạt động hoàn hảo!")
     else
         InputBox.Text = ""
         InputBox.PlaceholderText = "ID không hợp lệ!"
