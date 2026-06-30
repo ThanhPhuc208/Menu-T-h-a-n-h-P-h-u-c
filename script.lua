@@ -1,5 +1,5 @@
 -- (Creator = Thanh Phuc)
--- 💟 Thanh Phuc - Chroma Boombox Cầu Vồng Đeo Chéo + Nháy Theo Nhạc (Visualizer Mi 10S 6 Thanh Cực Căng) 💟
+-- 💟 Thanh Phuc - Chroma Boombox Mi 10S Kép Đối Xứng 6 Thanh Siêu Bass - Không Delay 💟
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -12,34 +12,25 @@ LocalSound.Parent = LocalPlayer:WaitForChild("PlayerWorkspace", 5) or workspace
 LocalSound.Volume = 2
 LocalSound.Looped = true
 
--- TẠO CHROMA BOOMBOX ĐEO CHÉO ẢO + SÓNG NHẠC VISUALIZER
 local FakeBoombox = nil
 local VisualizerBars = {}
-local loopConnection = nil -- Quản lý loop hiệu ứng tránh bị chồng luồng khi reset
+local loopConnection = nil 
 
 local function CreateFakeBoombox()
-    -- Dọn dẹp cũ triệt để trước khi tạo mới để tránh xung đột khi chuyển bài
-    if loopConnection then 
-        loopConnection:Disconnect() 
-        loopConnection = nil
-    end
-    if FakeBoombox then 
-        FakeBoombox:Destroy() 
-        FakeBoombox = nil
-    end
-    for _, bar in pairs(VisualizerBars) do 
-        if bar.Part then bar.Part:Destroy() end 
-    end
+    -- Xóa triệt để đồ cũ ngay lập tức
+    if loopConnection then loopConnection:Disconnect() loopConnection = nil end
+    if FakeBoombox then FakeBoombox:Destroy() FakeBoombox = nil end
+    for _, bar in pairs(VisualizerBars) do if bar.Part then bar.Part:Destroy() end end
     VisualizerBars = {}
     
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local character = LocalPlayer.Character
     if not character then return end
     
-    -- Chờ đợi chắc chắn bộ phận thân (Torso) xuất hiện để tránh lỗi khi hồi sinh
-    local torso = character:WaitForChild("UpperTorso", 5) or character:WaitForChild("Torso", 5)
+    -- Lấy nhanh Torso, không dùng WaitForChild thời gian dài gây trễ
+    local torso = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
     if not torso then return end
     
-    -- Tạo khối Box chuẩn chất liệu Neon phát sáng cầu vồng
+    -- Tạo khối Box chính
     local part = Instance.new("Part")
     part.Name = "ThanhPhucChromaBoombox"
     part.Material = Enum.Material.Neon
@@ -48,27 +39,26 @@ local function CreateFakeBoombox()
     part.Parent = character
     FakeBoombox = part
     
-    -- Kích thước gốc chuẩn gọn gàng
     local baseSize = Vector3.new(1.8, 1.2, 0.4)
     part.Size = baseSize
     
-    -- Gắn và Xoay Xéo như đeo Balo Quai Chéo sau lưng
     local weld = Instance.new("Weld")
     weld.Part0 = torso
     weld.Part1 = part
     weld.C0 = CFrame.new(0, -0.2, 0.65) * CFrame.Angles(0, math.rad(180), math.rad(25))
     weld.Parent = part
     
-    -- TẠO CÁC THANH SÓNG NHẠC ĐỐI XỨNG KÉP (CHUẨN 6 THANH/6 NHỊP)
-    local barCount = 6 -- Trả về đúng 6 thanh chia đều đối xứng 3-3 từ giữa ra 2 bên
-    local barWidth = baseSize.X / barCount 
+    -- TẠO 6 THANH NHỊP ĐỐI XỨNG PHÂN BỔ CHUẨN (KHÔNG BỊ LỘ CÒN 5 THANH)
+    local barCount = 6 
+    -- Giảm nhẹ một chút độ rộng để tạo khe hở siêu nhỏ giữa các thanh, giúp nhìn rõ đủ 6 thanh riêng biệt
+    local barWidth = (baseSize.X / barCount) * 0.96 
+    local totalWidthOfBars = barCount * barWidth
     
     for i = 1, barCount do
         local bar = Instance.new("Part")
         bar.Name = "VisualizerBar" .. i
         bar.Material = Enum.Material.Neon
-        local varSize = Vector3.new(barWidth, 0.1, 0.2)
-        bar.Size = varSize
+        bar.Size = Vector3.new(barWidth, 0.1, 0.2)
         bar.CanCollide = false
         bar.Massless = true
         bar.Parent = character
@@ -77,15 +67,14 @@ local function CreateFakeBoombox()
         barWeld.Part0 = part
         barWeld.Part1 = bar
         
-        -- Căn chỉnh vị trí xuất phát từ cạnh trái sang cạnh phải của khối hộp
-        local xOffset = -(baseSize.X / 2) + (i - 0.5) * barWidth
+        -- Công thức căn lề chuẩn xác từ trái sang phải dựa trên tâm loa
+        local xOffset = -(totalWidthOfBars / 2) + (i - 0.5) * barWidth
         barWeld.C0 = CFrame.new(xOffset, baseSize.Y / 2, 0) 
         barWeld.Parent = bar
         
         table.insert(VisualizerBars, {Part = bar, Weld = barWeld, Index = i})
     end
     
-    -- Hiệu ứng chạy màu cầu vồng + SIÊU BASS ĐẬP MẠNH MẼ
     local hue = 0
     loopConnection = RunService.RenderStepped:Connect(function()
         if not part or not part.Parent or not part:IsDescendantOf(workspace) then
@@ -93,53 +82,47 @@ local function CreateFakeBoombox()
             return
         end
         
-        -- Lấy độ lớn âm thanh hiện tại
         local loudness = LocalSound.PlaybackLoudness
-        local normLoudness = math.clamp(loudness / 260, 0, 1) -- Đẩy độ nhạy Bass lên tối đa
+        -- Đẩy cực hạn độ nhạy Bass (Chia 210 thay vì 260) giúp tiếng Bass nhỏ cũng giật rất mạnh
+        local normLoudness = math.clamp(loudness / 210, 0, 1) 
         
-        -- Tốc độ chuyển màu Cầu vồng chạy nhanh theo nhịp Bass dồn dập
-        local speedMultiplier = 1 + (normLoudness * 4.5)
-        hue = (hue + (0.75 * speedMultiplier)) % 360 
+        local speedMultiplier = 1 + (normLoudness * 5)
+        hue = (hue + (0.8 * speedMultiplier)) % 360 
         local mainColor = Color3.fromHSV(hue / 360, 1, 1)
-        
-        -- Áp màu cầu vồng lên khối chính
         part.Color = mainColor
         
-        -- SIÊU BASS MI 10S: Giật nảy thùng loa căng đét, phồng to nhỏ cực bốc
-        local scaleFactor = 1 + (normLoudness * 0.45) 
-        part.Size = Vector3.new(baseSize.X * scaleFactor, baseSize.Y * (1 + normLoudness * 0.2), baseSize.Z * scaleFactor)
+        -- BASS SIÊU BẠO LỰC: Đập phồng cực đại lên tới 65% kích thước gốc, giật nảy tanh tách
+        local scaleFactor = 1 + (normLoudness * 0.65) 
+        part.Size = Vector3.new(baseSize.X * scaleFactor, baseSize.Y * (1 + normLoudness * 0.35), baseSize.Z * scaleFactor)
         
-        -- Cập nhật 6 thanh sóng nhạc nhấp nhô ĐỐI XỨNG ĐỀU (Sửa lỗi lệch nhịp ở giữa)
+        -- Cập nhật nhịp nháy 6 thanh đối xứng Harman Kardon
         for _, item in pairs(VisualizerBars) do
             if item.Part and item.Part.Parent then
-                -- Tính toán khoảng cách từ vị trí thanh đến tâm đối xứng chính xác giữa thanh 3 và thanh 4
-                local centerOffset = math.abs(item.Index - 3.5) -- Cặp (3,4) = 0.5, Cặp (2,5) = 1.5, Cặp (1,6) = 2.5
-                local waveFactor = math.sin(tick() * 22 + centerOffset * 2.2) * 0.15
+                -- Khoảng cách đối xứng chuẩn từ trục giữa (giữa thanh 3 và 4)
+                local centerOffset = math.abs(item.Index - 3.5) 
+                local waveFactor = math.sin(tick() * 26 + centerOffset * 2.5) * 0.2 -- Tăng tốc độ sóng nhịp
                 
-                -- Độ cao nhảy giật nảy căng theo tiếng Bass
-                local targetHeight = math.clamp((normLoudness * 1.1) - (centerOffset * 0.08) + waveFactor, 0.05, 1.2)
+                -- Thanh nhịp giật cao vút theo tiếng Bass căng
+                local targetHeight = math.clamp((normLoudness * 1.5) - (centerOffset * 0.12) + waveFactor, 0.05, 1.6)
                 
-                -- Cập nhật kích thước thanh theo tỷ lệ scale của thùng loa chính
                 item.Part.Size = Vector3.new(barWidth * scaleFactor, targetHeight, item.Part.Size.Z)
                 
-                -- Định vị chân dải LED bám khít sát mặt loa trên khi giật to nhỏ
                 local currentTop = (part.Size.Y) / 2
-                local currentXOffset = (-(baseSize.X / 2) + (item.Index - 0.5) * barWidth) * scaleFactor
+                local currentXOffset = (-(totalWidthOfBars / 2) + (item.Index - 0.5) * barWidth) * scaleFactor
                 item.Weld.C0 = CFrame.new(currentXOffset, currentTop + (targetHeight / 2), 0)
                 
-                -- Đổi màu dải cầu vồng đối xứng cặp hoàn hảo từ giữa ra rìa loa
-                local barHue = (hue + (centerOffset * 35)) % 360
+                local barHue = (hue + (centerOffset * 40)) % 360
                 item.Part.Color = Color3.fromHSV(barHue / 360, 1, 1)
             end
         end
     end)
 end
 
--- TỰ ĐỘNG ĐEO LẠI KHI DIE
+-- FIX LỖI DELAY KHI DIE/HỒI SINH: Gọi ngay lập tức, không chờ wait dài dòng
 LocalPlayer.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid")
-    task.wait(0.5)
-    CreateFakeBoombox()
+    -- Chờ Humanoid xuất hiện là kích hoạt luôn, loại bỏ task.wait(0.5) gây trễ
+    char:WaitForChild("Humanoid", 5)
+    CreateFakeBoombox() 
 end)
 
 -- GIAO DIỆN GUI (Giữ nguyên toàn bộ cấu trúc cũ)
@@ -207,16 +190,16 @@ PlayBtn.TextColor3 = Color3.new(1, 1, 1)
 PlayBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
 Instance.new("UICorner", PlayBtn)
 
--- Kích hoạt phát nhạc và gọi Loa Đeo Chéo xuất hiện
+-- FIX LỖI TRỄ ĐỔI NHẠC: Tạo lại loa tức thì khi bấm nút
 PlayBtn.MouseButton1Click:Connect(function()
     local cleanID = InputBox.Text:match("%d+")
     if cleanID then
         LocalSound.SoundId = "rbxassetid://" .. cleanID
         LocalSound:Play()
         
-        -- Thực hiện tạo mới / cập nhật lại loa ngay lập tức
+        -- Kích hoạt loa ngay lập tức không thông qua delay
         CreateFakeBoombox()
-        print("Thanh Phuc đã cập nhật bài hát mới, hệ thống 6 nhịp đối xứng Mi 10S hoạt động hoàn hảo!")
+        print("Thanh Phuc đã kích hoạt Bass Mi 10S tức thì, đủ 6 thanh nhịp chuẩn!")
     else
         InputBox.Text = ""
         InputBox.PlaceholderText = "ID không hợp lệ!"
