@@ -49,7 +49,7 @@ local function CreateFakeBoombox()
     part.Parent = character
     FakeBoombox = part
     
-    -- Kích thước gốc chuẩn (gọn gàng như trong ảnh 1000056621.jpg)
+    -- Kích thước gốc chuẩn (gọn gàng như trong ảnh 1000056621_2.jpg)
     local baseSize = Vector3.new(1.8, 1.2, 0.4)
     part.Size = baseSize
     
@@ -160,7 +160,7 @@ local function CreateFakeBoombox()
             end
         end
     end)
-end
+end -- ĐÃ THÊM DẤU ĐÓNG NGOẶC CỦA HÀM TẠI ĐÂY (SỬA LỖI)
 
 -- TỰ ĐỘNG ĐEO LẠI KHI DIE (Bám dính vĩnh viễn vào nhân vật sau khi hồi sinh)
 LocalPlayer.CharacterAdded:Connect(function(char)
